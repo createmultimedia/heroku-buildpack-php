@@ -18,6 +18,8 @@ if [[ $dep_version == *alpha* ]] || [[ $dep_version == *beta* ]] || [[ $dep_vers
         dep_url=http://downloads.php.net/~jpauli/${dep_archive_name}
     elif [[ $dep_version == 5.6.* ]]; then
         dep_url=http://downloads.php.net/~tyrael/${dep_archive_name}
+    elif [[ $dep_version == 7.0.* ]]; then
+        dep_url=https://downloads.php.net/~ab/${dep_archive_name}
     fi
 else
     dep_url=http://us1.php.net/get/${dep_archive_name}/from/this/mirror
@@ -34,6 +36,19 @@ if echo -n $dep_version | python -c "import sys, pkg_resources; ver=pkg_resource
     curl -L https://github.com/php/php-src/pull/694.diff | patch -p1
 fi
 
+configureopts=
+if [[ $dep_version == 7.* ]]; then
+    configureopts="\
+--with-mcrypt=shared,${OUT_PREFIX} \
+--enable-opcache-file\
+"
+else
+    configureopts="\
+--with-mcrypt=${OUT_PREFIX} \
+--with-mysql=shared \
+"
+fi
+
 export PATH=${OUT_PREFIX}/bin:$PATH
 # cannot be built shared: date, ereg, opcache (always), pcre, reflection, sockets (?), spl, standard,
 # sqlite3 and pdo_sqlite are on by default but we're building them shared on purpose
@@ -44,7 +59,6 @@ LD_LIBRARY_PATH=${OUT_PREFIX} ./configure \
     --enable-fpm \
     --with-bz2 \
     --with-curl \
-    --with-mcrypt=${OUT_PREFIX} \
     --with-pdo-mysql \
     --with-mysqli \
     --with-openssl \
@@ -67,14 +81,14 @@ LD_LIBRARY_PATH=${OUT_PREFIX} ./configure \
     --with-gettext=shared,${OUT_PREFIX} \
     --enable-intl=shared \
     --enable-mbstring=shared \
-    --with-mysql=shared \
     --enable-pcntl=shared \
     --enable-shmop=shared \
     --enable-soap=shared \
     --with-sqlite3=shared \
     --with-pdo-sqlite=shared \
     --with-xmlrpc=shared \
-    --with-xsl=shared
+    --with-xsl=shared \
+    $configureopts
 make -s -j 9
 make install -s
 popd
