@@ -1,5 +1,25 @@
 # heroku-buildpack-php CHANGELOG
 
+## v79 (2015-10-08)
+
+### CHG
+
+- Enable Apache modules `ssl_module` and `mod_proxy_html` (with `mod_xml2enc` dependency) by default [David Zuelke]
+
+## v78 (2015-10-01)
+
+### ADD
+
+- PHP/7.0.0RC4 [David Zuelke]
+- PHP/5.5.30 [David Zuelke]
+- PHP/5.6.14 [David Zuelke]
+
+## v77 (2015-09-17)
+
+### ADD
+
+- PHP/7.0.0RC3 [David Zuelke]
+
 ## v76 (2015-09-08)
 
 ### ADD
