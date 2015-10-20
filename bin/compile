@@ -226,7 +226,7 @@ if [[ "${HHVM_VERSION}" ]]; then
     export -f hhvm
 fi
 
-APACHE_VERSION="2.4.10"
+APACHE_VERSION="2.4.17"
 APACHE_DIST_URL="$S3_URL/apache-$APACHE_VERSION.tar.gz"
 echo "- Apache $APACHE_VERSION" | indent
 curl --silent --location "$APACHE_DIST_URL" | tar xz -C $BUILD_DIR/.heroku/php
@@ -236,7 +236,7 @@ cp $BP_DIR/conf/apache2/httpd.conf.default $BUILD_DIR/.heroku/php/etc/apache2/ht
 mkdir -p $BUILD_DIR/.heroku/php/.versions/apache2
 echo $APACHE_VERSION > $BUILD_DIR/.heroku/php/.versions/apache2/apache2
 
-NGINX_VERSION="1.6.0"
+NGINX_VERSION="1.8.0"
 NGINX_DIST_URL="$S3_URL/nginx-$NGINX_VERSION.tar.gz"
 echo "- Nginx $NGINX_VERSION" | indent
 curl --silent --location "$NGINX_DIST_URL" | tar xz -C $BUILD_DIR/.heroku/php

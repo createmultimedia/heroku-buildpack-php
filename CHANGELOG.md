@@ -1,5 +1,17 @@
 # heroku-buildpack-php CHANGELOG
 
+## v80 (2015-10-15)
+
+### ADD
+
+- Nginx/1.8.0 [David Zuelke]
+- Apache/2.4.17 [David Zuelke]
+- PHP/7.0.0RC5 [David Zuelke]
+
+### CHG
+
+- Use system default php.ini config instead of buildpacks' if no custom config given [David Zuelke]
+
 ## v79 (2015-10-08)
 
 ### CHG
