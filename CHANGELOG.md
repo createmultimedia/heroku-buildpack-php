@@ -1,5 +1,24 @@
 # heroku-buildpack-php CHANGELOG
 
+## v83 (2015-11-16)
+
+### ADD
+
+- Composer/1.0.0-alpha11 [David Zuelke]
+- PHP/7.0.0RC7 [David Zuelke]
+
+### CHG
+
+- Improve Composer vendor and bin dir detection in build sources [David Zuelke]
+- Deprecate concurrent installs of HHVM and PHP [David Zuelke]
+- Start New Relic daemon manually on Dyno boot to ensure correct behavior with non web PHP programs [David Zuelke]
+
+### FIX
+
+- Wrong Apache dist URL in support/build [David Zuelke]
+- Build failure if `heroku-*-*` boot scripts are committed to Git in Composer bin dir [David Zuelke]
+- Broken signal handling in boot scripts on Linux [David Zuelke]
+
 ## v82 (2015-10-31)
 
 ### CHG
