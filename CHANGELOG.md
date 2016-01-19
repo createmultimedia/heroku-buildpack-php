@@ -1,5 +1,74 @@
 # heroku-buildpack-php CHANGELOG
 
+## v91 (2016-01-08)
+
+### ADD
+
+- ext/phalcon 2.0.9 [David Zuelke]
+- PHP/7.0.2 [David Zuelke]
+- PHP/5.6.17 [David Zuelke]
+- PHP/5.5.31 [David Zuelke]
+- ext-apcu/5.1.2 [David Zuelke]
+- ext-mongodb/1.1.2 [David Zuelke]
+- ext-oauth/2.0.0 [David Zuelke]
+
+## v90 (2015-12-18)
+
+### ADD
+
+- PHP/7.0.1 [David Zuelke]
+
+### CHG
+
+- Double default INI setting values for `opcache.memory_consumption`, `opcache.interned_strings_buffer` and `opcache.max_accelerated_files` [David Zuelke]
+
+## v89 (2015-12-15)
+
+### FIX
+
+- HHVM builds failing when trying to install New Relic or Blackfire [David Zuelke]
+
+## v88 (2015-12-15)
+
+### CHG
+
+- Big loud warnings if `composer.lock` is outdated (or even broken) [David Zuelke]
+- Auto-install `ext-blackfire` and `ext-newrelic` at the very end of the build to avoid them instrumenting build steps or cluttering output with startup messages [David Zuelke]
+
+### FIX
+
+- Buildpack does not export PATH for multi-buildpack usage [David Zuelke]
+- Composer limitation leads to lower than possible PHP versions getting resolved [David Zuelke]
+- `lib-` platform package requirements may prevent dependency resolution [David Zuelke]
+- Invalid/broken `composer.lock` produces confusing error message [David Zuelke]
+
+## v87 (2015-12-11)
+
+### CHG
+
+- Further improve error information on failed system package install [David Zuelke]
+- Notice if implicit version selection based on dependencies' requirements is made [David Zuelke]
+
+### FIX
+
+- "`|`" operators in `composer.lock` platform package requirements break system package dependency resolution [David Zuelke]
+- Notice about missing runtime version selector does not show up in all cases [David Zuelke]
+
+## v86 (2015-12-10)
+
+### ADD
+
+- PHP/7.0.0 [David Zuelke]
+- PHP/5.6.16 [David Zuelke]
+- ext-apcu/4.0.10 [David Zuelke]
+- ext-mongo/1.6.12 [David Zuelke]
+- ext-imagick/3.3.0 [David Zuelke]
+- ext-blackfire/1.7.0 [David Zuelke]
+
+### CHG
+
+- Rewrite most of the build process; system packages are now installed using a custom Composer installer and Composer repository [David Zuelke]
+
 ## v83 (2015-11-16)
 
 ### ADD
