@@ -1,10 +1,52 @@
 # heroku-buildpack-php CHANGELOG
 
+## v93 (2016-02-??)
+
+### ADD
+
+- Support custom platform repositories via space separated `HEROKU_PHP_PLATFORM_REPOSITORIES` env var; leading "-" entry disables default repository [David Zuelke]
+
+### CHG
+
+- A `composer.phar` in the project root will no longer be aliased to `composer` on dyno startup [David Zuelke]
+- Runtimes, extensions and web servers are now installed as fully self-contained Composer packages [David Zuelke]
+- Perform boot script startup checks without loading unnecessary PHP configs or extensions [David Zuelke]
+- ext-blackfire builds are now explicitly versioned (currently v1.9.1) [David Zuelke]
+
+### FIX
+
+- Internal `php-min` symlink ends up in root of built apps [David Zuelke]
+- Manifest for ext-apcu/4.0.10 does not declare ext-apc replacement [David Zuelke]
+- Boot scripts exit with status 0 when given invalid flag as argument [David Zuelke]
+- Manifest for ext-memcached/2.2.0 declares wrong PHP requirement for PHP 5.6 build [David Zuelke]
+- Setting `NEW_RELIC_CONFIG_FILE` breaks HHVM builds (#149) [David Zuelke]
+
+## v92 (2016-02-09)
+
+### ADD
+
+- ext-apcu/5.1.3 [David Zuelke]
+- PHP/5.5.32 [David Zuelke]
+- PHP/5.6.18 [David Zuelke]
+- PHP/7.0.3 [David Zuelke]
+- ext-phalcon/2.0.10 [David Zuelke]
+- ext-blackfire for PHP 7 [David Zuelke]
+
+### CHG
+
+- Refactor and improve build manifest helpers, add bucket sync tooling [David Zuelke]
+- Use Bob 0.0.7 for builds [David Zuelke]
+
+### FIX
+
+- PHP 7 extension formulae use wrong API version in folder name [David Zuelke]
+- Composer build formula depends on removed PHP formula [Stefan Siegl]
+
 ## v91 (2016-01-08)
 
 ### ADD
 
-- ext/phalcon 2.0.9 [David Zuelke]
+- ext-phalcon/2.0.9 [David Zuelke]
 - PHP/7.0.2 [David Zuelke]
 - PHP/5.6.17 [David Zuelke]
 - PHP/5.5.31 [David Zuelke]
