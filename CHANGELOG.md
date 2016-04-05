@@ -1,6 +1,95 @@
 # heroku-buildpack-php CHANGELOG
 
-## v93 (2016-02-??)
+## v100 (2016-03-31)
+
+### ADD
+
+- ext-imap for all PHP versions [David Zuelke]
+- ext-pq/1.0.0 and 2.0.0 [David Zuelke]
+- PHP/7.0.5 [David Zuelke]
+- PHP/5.6.20 [David Zuelke]
+- PHP/5.5.34 [David Zuelke]
+
+### CHG
+
+- Return to using built-in default value for the `pcre.jit` PHP INI setting [David Zuelke]
+- Use Composer/1.0.0beta2 [David Zuelke]
+- Use first configured platform repository to load components for bootstrapping [David Zuelke]
+
+## v99 (2016-03-23)
+
+### FIX
+
+- Automatic extensions (blackfire, newrelic) may fail to get installed with many dependencies [David Zuelke]
+
+## v98 (2016-03-21)
+
+### ADD
+
+- ext-event/2.0.1 [David Zuelke]
+- ext-mongo/1.6.13 [David Zuelke]
+- ext-mongodb/1.1.5 [David Zuelke]
+- ext-oauth/2.0.1 [David Zuelke]
+- ext-newrelic/6.1.0.157 [David Zuelke]
+- ext-blackfire/1.10.0 [David Zuelke]
+
+### CHG
+
+- Remove GitHub API rate limit checks during build time [David Zuelke]
+- Change pcre.jit to 0 in php.ini [David Zuelke]
+
+## v97 (2016-03-10)
+
+### CHG
+
+- Temporarily downgrade to ext-newrelic/5.1.1.130 [David Zuelke]
+
+## v96 (2016-03-10)
+
+### ADD
+
+- ext-imagick/3.4.1 for all PHP versions, with platform imagemagick [David Zuelke]
+- ext-mongodb/1.1.3 [David Zuelke]
+- ext-ldap, with SASL, for PHP builds (#131) [David Zuelke]
+- ext-gmp for PHP builds (#117) [David Zuelke]
+- ext-event/2.0.0 [David Zuelke]
+- apcu_bc for ext-apcu on PHP 7 (#137) [David Zuelke]
+- ext-newrelic/6.0.1.156 (#153) [David Zuelke]
+
+### CHG
+
+- Use Composer/1.0.0beta1 [David Zuelke]
+- Remove vendored ICU library and use platform ICU52 for PHP [David Zuelke]
+- Remove vendored zlib and use platform version for PHP and Apache [David Zuelke]
+- Remove vendored pcre library and use platform version for Apache [David Zuelke]
+- Use platform pcre and zlib for Nginx [David Zuelke]
+- Update vendored gettext to 0.19.7 and build only its runtime parts [David Zuelke]
+- Use platform libsasl for libmemcached [David Zuelke]
+- Strip platform packages on build install [David Zuelke]
+- Ignore platform package replace/provide/conflict from root `composer.json` on platform package install [David Zuelke]
+
+### FIX
+
+- Platform installer is incompatible with PHP 5.5 [David Zuelke]
+
+## v95 (2016-03-03)
+
+### ADD
+
+- PHP/5.5.33 [David Zuelke]
+- PHP/5.6.19 [David Zuelke]
+- PHP/7.0.4 [David Zuelke]
+- ext-blackfire/1.9.2 [David Zuelke]
+- Nginx/1.8.1 [David Zuelke]
+- Apache/2.4.18 [David Zuelke]
+
+## v94 (2016-02-26)
+
+### FIX
+
+- No web servers get selected when a `composer.lock` is missing [David Zuelke]
+
+## v93 (2016-02-26)
 
 ### ADD
 
@@ -12,6 +101,10 @@
 - Runtimes, extensions and web servers are now installed as fully self-contained Composer packages [David Zuelke]
 - Perform boot script startup checks without loading unnecessary PHP configs or extensions [David Zuelke]
 - ext-blackfire builds are now explicitly versioned (currently v1.9.1) [David Zuelke]
+- Append `composer config bin-dir` to `$PATH` for runtime [David Zuelke]
+- Check for lock file freshness using `composer validate` (#141) [David Zuelke]
+- Change PHP `expose_php` to `off`, Apache `ServerTokens` to `Prod` and Nginx `server_tokens` to `off` for builds (#91, #92) [David Zuelke]
+- Respect "provide", "replace" and "conflict" platform packages in dependencies and composer.json for platform package installs [David Zuelke]
 
 ### FIX
 

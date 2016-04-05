@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Build Path: /app/.heroku/php/
-# Build Deps: libraries/zlib, libraries/pcre
 
 # fail hard
 set -o pipefail
 # fail harder
-set -eux
+set -eu
 
 OUT_PREFIX=$1
 
@@ -13,7 +12,7 @@ source $(dirname $BASH_SOURCE)/_util/include/manifest.sh
 
 dep_formula=${0#$WORKSPACE_DIR/}
 dep_name=$(basename $BASH_SOURCE)
-dep_version=${VERSION}
+dep_version=${dep_formula#"${dep_name}-"}
 dep_package=${dep_name}-${dep_version}
 dep_dirname=httpd-${dep_version}
 dep_archive_name=${dep_dirname}.tar.gz
@@ -32,9 +31,10 @@ pushd ${dep_dirname}
 ./configure \
     --enable-layout=GNU \
     --prefix=${OUT_PREFIX} \
+    --disable-static \
     --with-included-apr \
-    --with-pcre=${OUT_PREFIX} \
-    --with-z=${OUT_PREFIX} \
+    --with-pcre \
+    --with-z \
     --with-ssl \
     --with-mpm=event \
     --enable-mods-shared=all \
@@ -44,7 +44,10 @@ pushd ${dep_dirname}
     --enable-deflate
 make -s -j 9
 make install -s
+find ${OUT_PREFIX} -type f \( -executable -o -name '*.a' \) -exec sh -c "file -i '{}' | grep -Eq 'application/x-(archive|executable|sharedlib); charset=binary'" \; -print | xargs strip --strip-unneeded
 popd
+
+rm -rf ${OUT_PREFIX}/man ${OUT_PREFIX}/share/apache2/manual
 
 MANIFEST_REQUIRE="${MANIFEST_REQUIRE:-"{}"}"
 MANIFEST_CONFLICT="${MANIFEST_CONFLICT:-"{}"}"

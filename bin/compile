@@ -48,12 +48,6 @@ repository. For more information, please refer to the docs at
 https://devcenter.heroku.com/articles/php-support#activation"
     else
         cat "$COMPOSER_LOCK" | python -mjson.tool &> /dev/null || error "Could not parse '$COMPOSER_LOCK'; make sure it's valid!"
-        if [[ $(cat "$COMPOSER_LOCK" | python -c 'import sys, json; print json.load(sys.stdin)["hash"]' 2> /dev/null) != $(md5sum "$COMPOSER" | cut -d " " -f1) ]]; then
-            warning "Your '$COMPOSER_LOCK' is not up to date with the latest
-changes in '$COMPOSER'. To ensure you are not getting stale
-dependencies, run 'composer update' on your machine and commit
-any changes to Git before pushing again."
-        fi
         cat "$COMPOSER_LOCK" | python -c 'import sys, json; l = json.load(sys.stdin); sys.exit(not(l["minimum-stability"] == "stable"));' 2> /dev/null || warning "Your '$COMPOSER' contains a non-'stable' setting
 for 'minimum-stability'. This may cause the installation of
 unstable versions of runtimes and extensions during this deploy.
@@ -64,7 +58,7 @@ see https://getcomposer.org/doc/01-basic-usage.md#stability"
 else
     if [[ ! -f "$COMPOSER" ]]; then
         warning "No '$COMPOSER' found.
-Using 'index.php' to declare PHP applications is considered legacy
+Using 'index.php' to declare app type as PHP is considered legacy
 functionality and may lead to unexpected behavior."
     else
         notice "Your '$COMPOSER' is completely empty.
@@ -86,23 +80,6 @@ ln -s $build_dir/.heroku/php /app/.heroku/php
 status "Bootstrapping..."
 
 s3_url="https://lang-php.s3.amazonaws.com/dist-${STACK}-stable/"
-
-# minimal PHP needed for installs, and make "composer" invocations use that for now
-mkdir -p $build_dir/.heroku/php-min
-ln -s $build_dir/.heroku/php-min /app/.heroku/php-min
-curl --silent --location "${s3_url}php-min.tar.gz" | tar xz -C $build_dir/.heroku/php-min
-curl --silent --location "${s3_url}composer-1.0.0alpha11.tar.gz" | tar xz -C $build_dir/.heroku/php
-# this alias is just for now while we install platform packages
-composer() {
-    /app/.heroku/php-min/bin/php /app/.heroku/php/bin/composer "$@"
-}
-export -f composer
-# packages that get installed will add to this file, it's both for us and for buildpacks that follow
-echo 'export PATH=/app/.heroku/php/bin:$PATH' > $bp_dir/export
-# make sure Composer is on the path at runtime
-mkdir -p $build_dir/.profile.d
-echo 'export PATH=$HOME/.heroku/php/bin:$PATH' > $build_dir/.profile.d/100-composer.sh
-
 # prepend the default repo to the list configured by the user
 # list of repositories to use is in ascening order of precedence
 HEROKU_PHP_PLATFORM_REPOSITORIES="${s3_url} ${HEROKU_PHP_PLATFORM_REPOSITORIES:-}"
@@ -110,87 +87,37 @@ if [[ "${HEROKU_PHP_PLATFORM_REPOSITORIES}" == *" - "* ]]; then
 	# a single "-" in the user supplied string removes everything to the left of it; can be used to delete the default repo
 	notice_inline "Default platform repository disabled."
 	HEROKU_PHP_PLATFORM_REPOSITORIES=${HEROKU_PHP_PLATFORM_REPOSITORIES#*" - "}
+	s3_url=$(echo "$HEROKU_PHP_PLATFORM_REPOSITORIES" | cut -f1 -d" " | sed 's/[^/]*$//')
+	notice_inline "Bootstrapping using ${s3_url}..."
 fi
+
+
+# minimal PHP needed for installs, and make "composer" invocations use that for now
+mkdir -p $build_dir/.heroku/php-min
+ln -s $build_dir/.heroku/php-min /app/.heroku/php-min
+curl --silent --location "${s3_url}php-min-7.0.5.tar.gz" | tar xz -C $build_dir/.heroku/php-min
+curl --silent --location "${s3_url}composer-1.0.0-beta2.tar.gz" | tar xz -C $build_dir/.heroku/php
+# this alias is just for now while we install platform packages
+composer() {
+    /app/.heroku/php-min/bin/php /app/.heroku/php/bin/composer "$@"
+}
+export -f composer
+
+composer_vendordir=$(composer config vendor-dir)
+composer_bindir=$(composer config bin-dir)
+
+# packages that get installed will add to this file, it's both for us and for buildpacks that follow
+# composer bin-dir goes last to avoid any conflicts
+echo "export PATH=/app/.heroku/php/bin:\$PATH:/app/$composer_bindir" > $bp_dir/export
+# make sure Composer and binaries for it are on the path at runtime
+# composer bin-dir goes last to avoid any conflicts
+mkdir -p $build_dir/.profile.d
+echo "export PATH=\$HOME/.heroku/php/bin:\$PATH:\$HOME/$composer_bindir" > $build_dir/.profile.d/100-composer.sh
 
 status "Installing platform packages..."
 
 # extract requirements from composer.lock
-/app/.heroku/php-min/bin/php -r '
-// prefix keys with "heroku-sys/"
-function mkreq($require) { return array_combine(array_map(function($v) { return "heroku-sys/$v"; }, array_keys($require)), $require); }
-// check if require section demands a runtime
-function hasreq($require) { return isset($require["php"]) || isset($require["hhvm"]); }
-// filter platform reqs
-$preqfilter = function($v) { return preg_match("#^(hhvm$|php(-64bit)?$|ext-)#", $v); };
-
-// remove first arg (0)
-array_shift($argv);
-// base repos we need - no packagist, and the installer plugin path (first arg)
-$repositories = [
-    ["packagist" => false],
-    ["type" => "path", "url" => array_shift($argv)],
-];
-// all other args are repo URLs; they get passed in ascending order of precedence, so we reverse
-foreach(array_reverse($argv) as $repo) $repositories[] = ["type" => "composer", "url" => $repo];
-
-$have_runtime_req = false;
-if(file_exists(getenv("COMPOSER_LOCK"))) {
-    $lock = json_decode(file_get_contents(getenv("COMPOSER_LOCK")), true);
-    // basic lock file validity check
-    if(!$lock || !isset($lock["platform"], $lock["packages"], $lock["hash"])) exit(1);
-    $have_runtime_req |= hasreq($lock["platform"]);
-    // for each package that has platform requirements we build a meta-package that we then depend on
-    // we cannot simply join all those requirements together with " " or "," because of the precedence of the "|" operator: requirements "5.*," and "^5.3.9|^7.0", which should lead to a PHP 5 install, would combine into "5.*,^5.3.9|^7.0" (there is no way to group requirements), and that would give PHP 7
-    $metapaks = [];
-    // whatever is in the lock "platform" key will be turned into a meta-package too, named "composer.json/composer.lock"
-    // this will result in an installer event for that meta-package, from which we can extract what extensions that are bundled (and hence "replace"d) with the runtime need to be enabled
-    // if we do not do this, then a require for e.g. ext-curl or ext-mbstring in the main composer.json cannot be found by the installer plugin
-    $root = [
-        "name" => getenv("COMPOSER")."/".getenv("COMPOSER_LOCK"),
-        "version" => "dev-".$lock["hash"],
-        "require" => $lock["platform"],
-    ];
-    $lock["packages"][] = $root;
-    $require = [
-        $root["name"] => $root["version"],
-        "heroku-sys/apache" => "^2.4.10",
-        "heroku-sys/nginx" => "~1.8.0",
-    ];
-    foreach($lock["packages"] as $package) {
-        // extract only platform reqs
-        $preq = array_filter(isset($package["require"]) ? $package["require"] : [], $preqfilter, ARRAY_FILTER_USE_KEY);
-        if(!$preq) continue;
-        $have_runtime_req |= hasreq($preq);
-        $metapaks[] = [
-            "type" => "metapackage",
-            // we re-use the dep name and version, makes for nice error messages if dependencies cannot be fulfilled :)
-            "name" => $package["name"],
-            "version" => $package["version"],
-            "require" => mkreq($preq),
-        ];
-        $require[$package["name"]] = $package["version"];
-    }
-    // add all meta-packages to one local package repo
-    if($metapaks) $repositories[] = ["type" => "package", "package" => $metapaks];
-}
-// if no PHP or HHVM is required anywhere, we need to add something
-if(!$have_runtime_req) {
-    file_put_contents("php://stderr", "NOTICE: No runtime required in ".getenv("COMPOSER_LOCK")."; using PHP ". ($require["heroku-sys/php"] = "^5.5.17") . "\n");
-} elseif(!isset($root["require"]["php"]) && !isset($root["require"]["hhvm"])) {
-    file_put_contents("php://stderr", "NOTICE: No runtime required in ".getenv("COMPOSER")."; requirements\nfrom dependencies in ".getenv("COMPOSER_LOCK")." will be used for selection\n");
-}
-preg_match("#^([^-]+)(?:-([0-9]+))?\$#", getenv("STACK")?:"cedar-14", $stack);
-$provide = ["heroku-sys/".$stack[1] => (isset($stack[2])?$stack[2]:"1").gmdate(".Y.m.d")]; # cedar: 14.2016.02.16 etc
-$json = [
-    "config" => ["cache-files-ttl" => 0, "discard-changes" => true],
-    "minimum-stability" => isset($lock["minimum-stability"]) ? $lock["minimum-stability"] : "stable",
-    "prefer-stable" => isset($lock["prefer-stable"]) ? $lock["prefer-stable"] : false,
-    "provide" => $provide,
-    "repositories" => $repositories,
-    "require" => $require,
-];
-echo json_encode($json, JSON_PRETTY_PRINT);
-' -- "$bp_dir/support/installer/" $HEROKU_PHP_PLATFORM_REPOSITORIES 2>&1 >$build_dir/.heroku/php/composer.json | indent || error "Couldn't parse '$COMPOSER_LOCK'; it must be a valid lock
+/app/.heroku/php-min/bin/php $bp_dir/bin/util/platform.php "$bp_dir/support/installer/" $HEROKU_PHP_PLATFORM_REPOSITORIES 2>&1 >$build_dir/.heroku/php/composer.json | indent || error "Couldn't parse '$COMPOSER_LOCK'; it must be a valid lock
 file generated by Composer. Run 'composer update', add/commit
 the change, then push again."
 
@@ -224,20 +151,25 @@ For a list of supported runtimes & extensions on Heroku, please
 refer to: https://devcenter.heroku.com/articles/php-support"
 fi
 
-# earlier we wrote at least one $PATH entry that we'll need now, and installed packages will likely have added to it too
-source $bp_dir/export
-
-if composer show -d "$build_dir/.heroku/php" --installed --quiet heroku-sys/php; then
+if composer show -d "$build_dir/.heroku/php" --installed --quiet heroku-sys/php 2>/dev/null; then
     engine="php"
     engine_r="php -r"
-elif composer show -d "$build_dir/.heroku/php" --installed --quiet heroku-sys/hhvm; then
+elif composer show -d "$build_dir/.heroku/php" --installed --quiet heroku-sys/hhvm 2>/dev/null; then
     engine="hhvm"
     engine_r="hhvm --php -r"
 fi
 
+composer validate --no-check-publish --no-check-all --quiet 2>/dev/null || warning "Your '$COMPOSER_LOCK' is not up to date with the latest
+changes in '$COMPOSER'. To ensure you are not getting stale
+dependencies, run 'composer update' on your machine and commit
+any changes to Git before pushing again."
+
 # clean up
 rm -rf /app/.heroku/php-min $build_dir/.heroku/php-min
 unset -f composer
+
+# earlier we wrote at least one $PATH entry that we'll need now, and installed packages will likely have added to it too
+source $bp_dir/export
 
 composer() {
     $engine $(which composer) "$@"
@@ -260,9 +192,6 @@ fi
 # echo composer version for info purposes
 # tail to get rid of outdated version warnings (Composer sends those to STDOUT instead of STDERR)
 composer --version 2> /dev/null | tail -n 1 | indent
-
-composer_vendordir=$(composer config vendor-dir 2> /dev/null | tail -n 1) # tail, as composer echos outdated version warnings to STDOUT
-composer_bindir=$(composer config bin-dir 2> /dev/null | tail -n 1) # tail, as composer echos outdated version warnings to STDOUT
 
 # throw a notice if people have added their vendor dir to Git; that's bad practice and makes everything slow and cluttered
 if [[ -f "$composer_vendordir/autoload.php" && -d "$composer_vendordir/composer" ]]; then
@@ -296,12 +225,6 @@ if [[ -n "$COMPOSER_GITHUB_OAUTH_TOKEN" ]]; then
 else
     # don't forget to remove any stored key if it's gone from the env
     composer config -g --unset github-oauth.github.com &> /dev/null # redirect outdated version warnings (Composer sends those to STDOUT instead of STDERR)
-    if curl --silent https://api.github.com/rate_limit | python -c 'import sys, json; sys.exit((json.load(sys.stdin)["resources"]["core"]["remaining"] > 0))'; then # yes, check > 0, not < 1 - exit status of 0 will trigger the if
-        notice "You've reached the GitHub API's request rate limit.
-Composer will try and fall back to slower downloads from source.
-It's strongly recommended you use a custom OAuth token; see
-http://devcenter.heroku.com/articles/php-support#custom-github-oauth-tokens"
-    fi
 fi
 # no need for the token to stay around in the env
 unset COMPOSER_GITHUB_OAUTH_TOKEN

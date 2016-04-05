@@ -4,7 +4,7 @@
 # fail hard
 set -o pipefail
 # fail harder
-set -eux
+set -eu
 
 OUT_PREFIX=$1
 
@@ -12,7 +12,7 @@ source $(dirname $BASH_SOURCE)/_util/include/manifest.sh
 
 dep_formula=${0#$WORKSPACE_DIR/}
 dep_name=$(basename $BASH_SOURCE)
-dep_version=${VERSION}
+dep_version=${dep_formula#"${dep_name}-"}
 dep_package=${dep_name}-${dep_version}
 dep_dirname=nginx-${dep_version}
 dep_archive_name=${dep_dirname}.tar.gz
@@ -22,8 +22,6 @@ dep_manifest=${dep_package}.composer.json
 echo "-----> Building ${dep_package}..."
 
 curl -L ${dep_url} | tar xz
-curl -L http://zlib.net/zlib-1.2.8.tar.gz | tar xz -C ${dep_dirname}
-curl -L http://sourceforge.net/projects/pcre/files/pcre/8.37/pcre-8.37.tar.gz | tar xz -C ${dep_dirname}
 
 pushd ${dep_dirname}
 ETC=${OUT_PREFIX}/etc
@@ -40,14 +38,14 @@ VAR=${OUT_PREFIX}/var
     --http-scgi-temp-path=${VAR}/run/nginx/scgi_temp \
     --http-log-path=${VAR}/log/nginx/access.log \
     --error-log-path=${VAR}/log/nginx/error.log \
-    --with-http_realip_module \
-    --with-pcre=pcre-8.37 \
-    --with-zlib=zlib-1.2.8
+    --with-http_realip_module
 make -s -j 9
 make install -s
+find ${OUT_PREFIX} -type f \( -executable -o -name '*.a' \) -exec sh -c "file -i '{}' | grep -Eq 'application/x-(archive|executable|sharedlib); charset=binary'" \; -print | xargs strip --strip-unneeded
+popd
+
 # this doesn't get created
 mkdir -p ${VAR}/run/nginx
-popd
 
 MANIFEST_REQUIRE="${MANIFEST_REQUIRE:-"{}"}"
 MANIFEST_CONFLICT="${MANIFEST_CONFLICT:-"{}"}"

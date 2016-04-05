@@ -15,7 +15,7 @@ ZEND_MODULE_API_VERSION=${ZEND_MODULE_API_VERSION#no-debug-non-zts-}
 
 dep_formula=${0#$WORKSPACE_DIR/}
 dep_name=$(basename $BASH_SOURCE)
-dep_version=${VERSION}
+dep_version=${dep_formula##*"/${dep_name}-"}
 dep_package=ext-${dep_name}-${dep_version}
 dep_dirname=newrelic-php5-${dep_version}-linux
 dep_archive_name=${dep_dirname}.tar.gz
@@ -27,8 +27,9 @@ case ${ZEND_MODULE_API_VERSION} in
 	20131226)
 		series=5.6
 		;;
-	*)
+	20151012)
 		series=7.0
+		;;
 esac
 dep_manifest=${dep_package}_php-$series.composer.json
 
@@ -43,6 +44,7 @@ mkdir -p ${ext_dir}
 mkdir -p ${bin_dir}
 cp agent/x64/newrelic-${ZEND_MODULE_API_VERSION}.so ${ext_dir}/newrelic.so
 cp daemon/newrelic-daemon.x64 ${bin_dir}/newrelic-daemon
+find ${OUT_PREFIX} -type f \( -executable -o -name '*.a' \) -exec sh -c "file -i '{}' | grep -Eq 'application/x-(archive|executable|sharedlib); charset=binary'" \; -print | xargs strip --strip-unneeded
 popd
 
 mkdir -p ${OUT_PREFIX}/bin
@@ -63,7 +65,7 @@ if [[ -n "$NEW_RELIC_LICENSE_KEY" ]]; then
         tail -qF -n 0 /tmp/heroku.ext-newrelic.newrelic-daemon.${PORT}.log 1>&2 &
         
         # daemon start
-        /app/.heroku/php/bin/newrelic-daemon -f -l "/tmp/heroku.ext-newrelic.newrelic-daemon.${PORT}.log" -d "${NEW_RELIC_LOG_LEVEL}" -p "/tmp/newrelic-daemon.pid" &
+        /app/.heroku/php/bin/newrelic-daemon --foreground --logfile "/tmp/heroku.ext-newrelic.newrelic-daemon.${PORT}.log" --loglevel "${NEW_RELIC_LOG_LEVEL}" --pidfile "/tmp/newrelic-daemon.pid" &
         
         # give it a moment to connect
         sleep 2
