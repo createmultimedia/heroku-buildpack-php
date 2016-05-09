@@ -1,5 +1,38 @@
 # heroku-buildpack-php CHANGELOG
 
+## v102 (2016-04-29)
+
+### ADD
+
+- ext-newrelic/6.2.0 [David Zuelke]
+- ext-blackfire/1.10.5 [David Zuelke]
+- ext-apcu/4.0.11 [David Zuelke]
+- ext-event/2.0.4 [David Zuelke]
+- ext-imagick/3.4.2 [David Zuelke]
+- ext-mongo/1.6.14 [David Zuelke]
+- PHP/5.5.35 [David Zuelke]
+- PHP/5.6.21 [David Zuelke]
+- PHP/7.0.6 [David Zuelke]
+
+### CHG
+
+- Bundle `blackfire` CLI binary with ext-blackfire [David Zuelke]
+- Build PHP with `php-cgi` executable [David Zuelke]
+- Composer/1.0.3 [David Zuelke]
+
+## v101 (2016-04-12)
+
+### ADD
+
+- ext-event/2.0.2 [David Zuelke]
+- ext-mongodb/1.1.6 [David Zuelke]
+- Apache/2.4.20 [David Zuelke]
+- ext-blackfire/1.10.3 [David Zuelke]
+
+### CHG
+
+- Use Composer/1.0.0 stable [David Zuelke]
+
 ## v100 (2016-03-31)
 
 ### ADD
