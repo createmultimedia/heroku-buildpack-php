@@ -1,5 +1,85 @@
 # heroku-buildpack-php CHANGELOG
 
+## v109 (2016-07-21)
+
+### ADD
+
+- PHP/7.0.9 [David Zuelke]
+- PHP/5.6.24 [David Zuelke]
+- PHP/5.5.38 [David Zuelke]
+
+## v108 (2016-07-08)
+
+### ADD
+
+- ext-oauth/2.0.2 [David Zuelke]
+- ext-mongodb/1.1.8 [David Zuelke]
+- ext-blackfire/1.11.1 [David Zuelke]
+- PHP/5.5.37 [David Zuelke]
+- PHP/5.6.23 [David Zuelke]
+- PHP/7.0.8 [David Zuelke]
+
+### CHG
+
+- Composer/1.1.3 [David Zuelke]
+
+### FIX
+
+- Revert to ext-redis/2.2.7 due to reported segfaults/memleaks [David Zuelke]
+
+## v107 (2016-06-18)
+
+### ADD
+
+- ext-redis/2.2.8 [David Zuelke]
+- ext-redis/3.0.0 [David Zuelke]
+- ext-newrelic/6.4.0 [David Zuelke]
+- ext-blackfire/1.10.6 [David Zuelke]
+
+### FIX
+
+- Custom `COMPOSER` env var breaks platform installs [David Zuelke]
+
+## v106 (2016-06-08)
+
+### ADD
+
+- ext-mongodb/1.1.7 [David Zuelke]
+- ext-cassandra/1.1.0 [David Zuelke]
+- ext-apcu/5.1.5 [David Zuelke]
+- ext-event/2.1.0 [David Zuelke]
+
+### CHG
+
+- Use Composer/1.1.2 [David Zuelke]
+
+## v105 (2016-05-27)
+
+### ADD
+
+- PHP/5.5.36 [David Zuelke]
+- PHP/5.6.22 [David Zuelke]
+- PHP/7.0.7 [David Zuelke]
+
+## v104 (2016-05-20)
+
+### ADD
+
+- ext-pq/1.1.1 and 2.1.1 [David Zuelke]
+
+## v103 (2016-05-20)
+
+### ADD
+
+- ext-pq/1.0.1 and 2.0.1 [David Zuelke]
+- ext-apcu/5.1.4 [David Zuelke]
+- ext-newrelic/6.3.0.161 [David Zuelke]
+- ext-ev/1.0.0 [David Zuelke]
+
+### CHG
+
+- Composer/1.1.1 [David Zuelke]
+
 ## v102 (2016-04-29)
 
 ### ADD
