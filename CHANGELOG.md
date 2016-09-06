@@ -1,5 +1,23 @@
 # heroku-buildpack-php CHANGELOG
 
+## v110 (2016-08-26)
+
+### ADD
+
+- ext-ev/1.0.3 [David Zuelke]
+- ext-phalcon/2.0.13 [David Zuelke]
+- ext-cassandra/1.2.2 [David Zuelke]
+- ext-blackfire/1.12.0 [David Zuelke]
+- ext-newrelic/6.6.0 [David Zuelke]
+- PHP/5.6.25 [David Zuelke]
+- PHP/7.0.10 [David Zuelke]
+- ext-phalcon/3.0.1 [David Zuelke]
+
+### CHG
+
+- Retry downloads up to three times during bootstrapping [David Zuelke]
+- Composer/1.2.0 [David Zuelke]
+
 ## v109 (2016-07-21)
 
 ### ADD
