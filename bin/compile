@@ -66,15 +66,16 @@ Please change its contents to at least '{}' so it is valid JSON."
     echo "{}" > $COMPOSER
 fi
 
+# PHP expects to be installed in /app/.heroku/php because of compiled paths, let's set that up!
+mkdir -p /app/.heroku
 # all system packages live in there
 mkdir -p $build_dir/.heroku/php
 # set up Composer
 export COMPOSER_HOME=$cache_dir/.composer
 mkdir -p $COMPOSER_HOME
-# we need to run things in /app because of compiled paths, set that up!
-mkdir -p /app/.heroku
-# link the subdir only - we will leave it in place for potentially following buildpacks
-ln -s $build_dir/.heroku/php /app/.heroku/php
+
+# if the build dir is not "/app", we symlink in the .heroku/php subdir (and only that, to avoid problems with other buildpacks) so that PHP correctly finds its INI files etc
+[[ $build_dir == '/app' ]] || ln -s $build_dir/.heroku/php /app/.heroku/php
 
 status "Bootstrapping..."
 
@@ -96,12 +97,12 @@ fi
 mkdir -p $build_dir/.heroku/php-min
 ln -s $build_dir/.heroku/php-min /app/.heroku/php-min
 
-curl_retry_on_18 --silent --location -o $build_dir/.heroku/php-min.tar.gz "${s3_url}php-min-7.0.10.tar.gz" || error "Failed to download minimal PHP for bootstrapping.
+curl_retry_on_18 --silent --location -o $build_dir/.heroku/php-min.tar.gz "${s3_url}php-min-7.0.13.tar.gz" || error "Failed to download minimal PHP for bootstrapping.
 Please try again, or contact support if this problem persists."
 tar xzf $build_dir/.heroku/php-min.tar.gz -C $build_dir/.heroku/php-min
 rm $build_dir/.heroku/php-min.tar.gz
 
-curl_retry_on_18 --silent --location -o $build_dir/.heroku/composer.tar.gz "${s3_url}composer-1.2.0.tar.gz" || error "Failed to download Composer. Please try again, or contact support if this problem persists."
+curl_retry_on_18 --silent --location -o $build_dir/.heroku/composer.tar.gz "${s3_url}composer-1.2.2.tar.gz" || error "Failed to download Composer. Please try again, or contact support if this problem persists."
 tar xzf $build_dir/.heroku/composer.tar.gz -C $build_dir/.heroku/php
 rm $build_dir/.heroku/composer.tar.gz
 
@@ -223,7 +224,7 @@ This directory should not be under version control; only your
 '$COMPOSER' and '$COMPOSER_LOCK' files should be added, which
 will let Composer handle installation of dependencies on deploy.
 To suppress this notice, first remove the folder from your index
-by running 'git rm --cached $composer_vendordir/'.
+by running 'git rm -r --cached $composer_vendordir/'.
 Next, edit your project's '.gitignore' file and add the folder
 '/$composer_vendordir/' to the list.$composer_warn_bindir
 For more info, refer to the Composer FAQ: http://bit.ly/1rlCSZU"
